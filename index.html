@@ -121,6 +121,7 @@
   <div class="mode">
     <button id="mode-res" onclick="setMode('res')">Residential</button>
     <button id="mode-com" onclick="setMode('com')">Commercial</button>
+    <button id="mode-zon" onclick="setMode('zon')">Zoning</button>
   </div>
   <div class="tb-fields">
     <label>Project / Address<input id="f-project" placeholder="123 Main St, York PA"></label>
@@ -131,6 +132,7 @@
 </header>
 
 <div id="sections"></div>
+<div id="zoning-form"></div>
 
 <div class="actions">
   <button class="primary" onclick="window.print()">Export PDF</button>
@@ -298,9 +300,68 @@ const COMMERCIAL = [
  ]}
 ];
 
+const ZONING = [
+ {t:"Permit Info", items:[
+  "Site address complete and correct",
+  "Parcel ID / map number verified",
+  "Zoning district identified",
+  "Municipality verified"
+ ]},
+ {t:"Owner & Applicant", items:[
+  "Owner name and address on application",
+  "Owner verified against parcel / deed",
+  "Applicant / agent information present",
+  "Contact information complete"
+ ]},
+ {t:"Site Conditions", items:[
+  "Plot plan included or noted as not required",
+  "Floodplain status identified (yes/no)",
+  "FIRM map number if in floodway",
+  "Floodway elevation noted if applicable",
+  "Stormwater management (SWM) trigger evaluated",
+  "SWM details included if required"
+ ]},
+ {t:"Lot & Building Dimensions", items:[
+  "Total lot area shown (acres or sq ft)",
+  "Proposed building height shown",
+  "Proposed building length shown",
+  "Proposed building width shown",
+  "Total square footage shown"
+ ]},
+ {t:"Setbacks & Coverage", items:[
+  "Front setback dimension shown",
+  "Side setback dimension shown",
+  "Rear setback dimension shown",
+  "Total lot coverage calculated (impervious surfaces)",
+  "Setbacks compared against zoning requirements"
+ ]},
+ {t:"Attachments", items:[
+  "Aerial map included",
+  "Parcel map included",
+  "Site plan included"
+ ]},
+ {t:"Township Review & Verification", items:[
+  "Zoning permit number assigned and recorded",
+  "Date of review recorded",
+  "Proposed use / improvement described",
+  "Allowed use confirmed (yes/no/variance/exception)",
+  "Non-conforming site status addressed",
+  "Non-conforming structure status addressed",
+  "Zoning case numbers noted if applicable",
+  "Stipulations from ZHB or BOS attached if required",
+  "Any other required documents present"
+ ]},
+ {t:"Certification", items:[
+  "Certification statement included",
+  "Compliance with zoning ordinance addressed",
+  "Permit approval / denial status indicated"
+ ]}
+];
+
 const MODES = {
   res: {data: RESIDENTIAL, key:"drawscope-res-v1", tag:"Residential Drawing Review · Posch Ventures", label:"DRAWSCOPE · RESIDENTIAL · CHECK TWICE, BUILD ONCE"},
-  com: {data: COMMERCIAL, key:"drawscope-com-v1", tag:"Commercial Drawing Review · Posch Ventures", label:"DRAWSCOPE · COMMERCIAL · CHECK TWICE, BUILD ONCE"}
+  com: {data: COMMERCIAL, key:"drawscope-com-v1", tag:"Commercial Drawing Review · Posch Ventures", label:"DRAWSCOPE · COMMERCIAL · CHECK TWICE, BUILD ONCE"},
+  zon: {data: ZONING, key:"drawscope-zon-v1", tag:"Zoning Permit Review · Posch Ventures", label:"DRAWSCOPE · ZONING · CHECK TWICE, BUILD ONCE"}
 };
 
 let mode = localStorage.getItem("drawscope-mode") || "res";
@@ -313,9 +374,12 @@ function loadState(){
 function save(){try{localStorage.setItem(MODES[mode].key,JSON.stringify(state))}catch(e){}}
 
 const root=document.getElementById("sections");
+const zroot=document.getElementById("zoning-form");
+
 function renderSections(){
   root.innerHTML="";
-  MODES[mode].data.forEach((sec,si)=>{
+  const data=mode==="zon"?ZONING:(MODES[mode].data);
+  data.forEach((sec,si)=>{
     const d=document.createElement("details");d.open=true;
     d.innerHTML=`<summary>${sec.t}<span class="count" id="c-${si}"></span></summary><ul>`+
       sec.items.map((it,i)=>{
@@ -327,7 +391,8 @@ function renderSections(){
 }
 
 function refresh(){
-  MODES[mode].data.forEach((sec,si)=>{
+  const data=mode==="zon"?ZONING:(MODES[mode].data);
+  data.forEach((sec,si)=>{
     let sd=0;
     sec.items.forEach((_,i)=>{if(state.checks[si+"-"+i]){sd++;}});
     const c=document.getElementById("c-"+si);
@@ -356,24 +421,33 @@ function loadFields(){
   });
 }
 
+function render(){
+  zroot.style.display="none";
+  root.style.display="block";
+  renderSections();
+}
+
 function setMode(m){
   mode=m;
   localStorage.setItem("drawscope-mode",m);
   document.getElementById("mode-res").classList.toggle("active",m==="res");
   document.getElementById("mode-com").classList.toggle("active",m==="com");
+  document.getElementById("mode-zon").classList.toggle("active",m==="zon");
   document.getElementById("tagline").textContent=MODES[m].tag;
   document.getElementById("foot-label").textContent=MODES[m].label;
   loadState();
   loadFields();
-  renderSections();
+  render();
   refresh();
 }
 
 function buildText(){
-  const m=MODES[mode];
-  let out="DRAWSCOPE — "+(mode==="res"?"RESIDENTIAL":"COMMERCIAL")+" DRAWING REVIEW\n";
-  out+="Project: "+(state.fields.project||"")+"\nOwner: "+(state.fields.owner||"")+"\nReviewed by: "+(state.fields.reviewer||"")+"\nDate/Rev: "+(state.fields.date||"")+"\n\n";
-  m.data.forEach((sec,si)=>{
+  const data=mode==="zon"?ZONING:(MODES[mode].data);
+  const modeLabel=mode==="res"?"RESIDENTIAL":mode==="com"?"COMMERCIAL":"ZONING";
+  let out="DRAWSCOPE — "+modeLabel+" REVIEW\n";
+  out+="Project: "+(state.fields.project||"")+"\nReviewed by: "+(state.fields.reviewer||"")+"\nDate/Rev: "+(state.fields.date||"")+"\n\n";
+  if(mode!=="zon")out+="Owner: "+(state.fields.owner||"")+"\n\n";
+  data.forEach((sec,si)=>{
     out+="== "+sec.t+" ==\n";
     sec.items.forEach((it,i)=>{out+=(state.checks[si+"-"+i]?"[x] ":"[ ] ")+it+"\n";});
     out+="\n";
@@ -389,7 +463,7 @@ function resetAll(){
   if(!confirm("Clear all checks and fields for this checklist?"))return;
   state={checks:{},fields:{}};save();
   loadFields();
-  renderSections();
+  render();
   refresh();
 }
 
