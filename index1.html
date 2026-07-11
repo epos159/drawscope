@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DrawScope — Drawing Review Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blueprint:#0f3057;
+    --blueprint-deep:#0a2440;
+    --line:#3d6b9e;
+    --paper:#f6f4ee;
+    --ink:#1c2733;
+    --accent:#e8b23a;
+    --ok:#2e8b57;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --disp:'Barlow Condensed',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--blueprint);color:#fff;font-family:var(--mono);font-size:14px;
+    background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
+    background-size:24px 24px;}
+  .wrap{max-width:860px;margin:0 auto;padding:20px 16px 80px}
+
+  /* ---------- header / title block ---------- */
+  header{border:2px solid #fff;background:var(--blueprint-deep);margin-bottom:18px}
+  .tb-top{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .logo{flex:0 0 auto}
+  h1{font-family:var(--disp);font-weight:700;font-size:34px;letter-spacing:.06em;line-height:1;text-transform:uppercase}
+  h1 span{color:var(--accent)}
+  .tagline{font-size:11px;color:#a8c3de;letter-spacing:.08em;text-transform:uppercase;margin-top:4px}
+  .tb-fields{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}
+  .tb-fields label{display:block;padding:8px 12px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#a8c3de}
+  .tb-fields label:nth-child(odd){border-right:1px solid var(--line)}
+  .tb-fields input{display:block;width:100%;background:transparent;border:none;color:#fff;font-family:var(--mono);font-size:14px;margin-top:3px;outline:none}
+  .tb-fields input::placeholder{color:#557aa3}
+
+  /* ---------- mode toggle ---------- */
+  .mode{display:flex;border-top:1px solid var(--line)}
+  .mode button{flex:1;font-family:var(--disp);font-size:15px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:11px 10px;border:none;border-radius:0;background:var(--blueprint-deep);color:#a8c3de;cursor:pointer}
+  .mode button:not(:last-child){border-right:1px solid var(--line)}
+  .mode button.active{background:var(--accent);color:var(--blueprint-deep)}
+  .mode button:hover:not(.active){background:rgba(255,255,255,.08);color:#fff}
+
+  /* ---------- sections ---------- */
+  details{border:1px solid var(--line);background:rgba(10,36,64,.75);margin-bottom:14px}
+  summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;font-family:var(--disp);font-size:20px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;user-select:none}
+  summary::-webkit-details-marker{display:none}
+  summary .count{font-family:var(--mono);font-size:12px;color:#a8c3de}
+  summary .count.done{color:var(--accent)}
+  .sub{padding:6px 14px 4px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);border-top:1px solid var(--line)}
+  ul{list-style:none}
+  li{border-top:1px solid rgba(61,107,158,.45)}
+  li label{display:flex;align-items:flex-start;gap:10px;padding:9px 14px;cursor:pointer}
+  li label:hover{background:rgba(255,255,255,.05)}
+  input[type=checkbox]{appearance:none;flex:0 0 auto;width:18px;height:18px;margin-top:1px;border:1.5px solid #fff;background:transparent;cursor:pointer;position:relative}
+  input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+  input[type=checkbox]:checked::after{content:'';position:absolute;left:5px;top:1px;width:5px;height:10px;border:solid var(--blueprint-deep);border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+  input[type=checkbox]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  li.checked label{color:#7d99b8;text-decoration:line-through;text-decoration-color:rgba(232,178,58,.6)}
+  .indent{padding-left:34px}
+
+  /* ---------- actions ---------- */
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+  button{font-family:var(--disp);font-size:16px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:12px 22px;border:2px solid #fff;background:transparent;color:#fff;cursor:pointer}
+  button:hover{background:#fff;color:var(--blueprint)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:var(--blueprint-deep)}
+  button.primary:hover{background:#fff;border-color:#fff}
+  .foot{margin-top:26px;font-size:11px;color:#7d99b8;text-align:center;letter-spacing:.08em}
+
+  /* ---------- print (PDF export) ---------- */
+  @media print{
+    body{background:#fff;color:var(--ink);font-size:11px}
+    .wrap{max-width:100%;padding:0}
+    header{border:2px solid var(--ink);background:#fff;color:var(--ink)}
+    .tb-top{border-color:var(--ink)}
+    h1{color:var(--ink)} h1 span{color:var(--ink)}
+    .tagline,.tb-fields label{color:#444}
+    .tb-fields,.tb-fields label{border-color:#999}
+    .tb-fields input{color:var(--ink)}
+    .actions,.foot,.mode{display:none}
+    details{border:1px solid #999;background:#fff;break-inside:avoid-page;margin-bottom:10px}
+    details:not([open]){display:block} /* force all content visible */
+    details .print-open{display:block}
+    summary{color:var(--ink);font-size:15px;padding:8px 12px}
+    summary .count{color:#444}
+    .sub{color:#333;border-color:#ccc}
+    li{border-color:#ddd}
+    li label{color:var(--ink);padding:5px 12px}
+    li.checked label{color:#666}
+    input[type=checkbox]{border-color:var(--ink)}
+    input[type=checkbox]:checked{background:var(--ink);border-color:var(--ink)}
+    input[type=checkbox]:checked::after{border-color:#fff}
+  }
+  @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+  @media (max-width:520px){h1{font-size:26px}.tb-fields{grid-template-columns:1fr}.tb-fields label:nth-child(odd){border-right:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="tb-top">
+    <svg class="logo" width="52" height="52" viewBox="0 0 64 64" aria-label="DrawScope logo">
+      <!-- drawing sheet with folded corner -->
+      <path d="M10 6h34l10 10v42H10z" fill="none" stroke="#fff" stroke-width="2.5"/>
+      <path d="M44 6v10h10" fill="none" stroke="#fff" stroke-width="2.5"/>
+      <!-- faint plan lines -->
+      <path d="M16 46h20M16 52h14" stroke="#5a86b5" stroke-width="2"/>
+      <!-- scope reticle -->
+      <circle cx="32" cy="30" r="12" fill="none" stroke="#e8b23a" stroke-width="2.5"/>
+      <path d="M32 12v9M32 39v9M14 30h9M41 30h9" stroke="#e8b23a" stroke-width="2.5"/>
+      <circle cx="32" cy="30" r="2.5" fill="#e8b23a"/>
+    </svg>
+    <div>
+      <h1>Draw<span>Scope</span></h1>
+      <div class="tagline" id="tagline">Drawing Review Checklist · Posch Ventures</div>
+    </div>
+  </div>
+  <div class="mode">
+    <button id="mode-res" onclick="setMode('res')">Residential</button>
+    <button id="mode-com" onclick="setMode('com')">Commercial</button>
+    <button id="mode-zon" onclick="setMode('zon')">Zoning</button>
+  </div>
+  <div class="tb-fields">
+    <label>Project / Address<input id="f-project" placeholder="123 Main St, York PA"></label>
+    <label>Owner<input id="f-owner" placeholder="Owner name"></label>
+    <label>Reviewed By<input id="f-reviewer" placeholder="Your name"></label>
+    <label>Date / Drawing Rev<input id="f-date" placeholder="07/02/2026 · Rev 2"></label>
+  </div>
+</header>
+
+<div id="sections"></div>
+<div id="zoning-form"></div>
+
+<div class="actions">
+  <button class="primary" onclick="window.print()">Export PDF</button>
+  <button onclick="shareList()">Share</button>
+  <button onclick="resetAll()">Reset</button>
+</div>
+<div class="foot" id="foot-label">DRAWSCOPE · CHECK TWICE, BUILD ONCE</div>
+</div>
+
+<script>
+const RESIDENTIAL = [
+ {t:"General Drawing Info",items:[
+  "Verify address on drawings",
+  "Check owner on parcel map",
+  "Custom home or addition identified",
+  "Drawing date and revision number noted",
+  "Scale shown on each sheet",
+  "Designer / drafter contact info",
+  "Building code year referenced",
+  "Building dimensions (length, width, height)"
+ ]},
+ {t:"Floor Plan",items:[
+  "Identify each room",
+  "Note wall cross section",
+  "Window and door schedule (sizes, headers)",
+  "Egress windows (size and location)",
+  "Smoke / CO detector locations",
+  "Stair details (rise, run, headroom, handrail)"
+ ]},
+ {t:"Foundation",items:[
+  "Footer size and depth (verify frost depth)",
+  "Block material size",
+  "Core filling details (e.g. 4' O.C., every corner, 1' either side of doors)",
+  "Anchor bolt / sill attachment detail",
+  "Foundation insulation",
+  "Drainage / waterproofing noted"
+ ]},
+ {t:"Framing",items:[
+  "Wall framing material size",
+  "Wall heights",
+  "Rafter / truss material size",
+  "Rafter and truss spacing",
+  "Joist material size",
+  "Joist spacing and span",
+  "Beam and header material size",
+  "Headers over all openings",
+  "Connection details",
+  "Truss / rafter attachment to wall (uplift)",
+  "Roof slope",
+  "Attic ventilation"
+ ]},
+ {t:"Systems & Envelope",items:[
+  "Electrical plans",
+  "Plumbing plans",
+  "Mechanical plans",
+  "Insulation values (walls, ceiling, floor)",
+  "Exterior wall covering",
+  "Roofing material noted"
+ ]},
+ {t:"Deck",items:[
+  "Height (greatest distance from deck to ground)",
+  "Footer size and depth",
+  "Post size",
+  "Ledger size / attachment detail",
+  "Ledger flashing detail",
+  "Lateral load connection",
+  "Beam size",
+  "Beam ply",
+  "Joist size",
+  "Joist spacing",
+  "Joist span",
+  "Deck dimensions",
+  "Railing height",
+  "Baluster spacing",
+  "Guard post attachment detail",
+  "Stairs — stringer size",
+  "Stairs — stringer quantity",
+  "Stairs — tread width",
+  "Stairs — step height (riser)",
+  "Stairs — step depth (run)",
+  "Stairs — handrail / graspability",
+  "If attached to existing structure, attachment method"
+ ]},
+ {t:"Porch Roof",items:[
+  "Footer size and depth",
+  "Post size",
+  "Post-to-beam connection",
+  "Roof framing details",
+  "Roof slope",
+  "Attachment to existing structure"
+ ]}
+];
+
+const COMMERCIAL = [
+ {t:"Basic Details",items:[
+  "Municipality is correct",
+  "Full project address (including suite/unit)",
+  "Scope of work matches drawings",
+  "Occupancy classification listed",
+  "Occupancy load",
+  "Construction type listed",
+  "Square footage of the building",
+  "Height of structure",
+  "Zoning compliance / setbacks verified"
+ ]},
+ {t:"Drawing Clarity",items:[
+  "All rooms labeled with use",
+  "New vs existing clearly identified",
+  "Dimensions shown (no scaling required)"
+ ]},
+ {t:"Core Building Data",items:[
+  "Code references listed",
+  "Building use consistent throughout plans"
+ ]},
+ {t:"Systems Present (Critical)",items:[
+  "Mechanical layout shown",
+  "Electrical layout shown",
+  "Plumbing layout shown"
+ ]},
+ {t:"Structural Check",items:[
+  "Beams / headers sized",
+  "Framing sizes shown",
+  "Wall types defined",
+  "Structural drawings stamped / sealed by engineer"
+ ]},
+ {t:"Trigger Check (High Priority)",items:[
+  "Occupant load calculated",
+  "If occupant load > 15: drinking fountains provided",
+  "If occupant load > 15: service sink provided",
+  "Accessibility requirements triggered and addressed"
+ ]},
+ {t:"Accessibility (ADA / ANSI)",items:[
+  "Accessible route shown (parking → entrance → interior)",
+  "Accessible parking count and van space",
+  "Restroom layout compliant",
+  "Grab bars (location and height)",
+  "Mirror height / reflective surface",
+  "Door hardware accessible",
+  "Signage locations shown"
+ ]},
+ {t:"Life Safety",items:[
+  "Emergency lighting shown",
+  "Exit paths clear",
+  "Exit signage shown",
+  "Travel distance to exit within code",
+  "Fire extinguisher location and type shown",
+  "Fire-rated assembly shown where required"
+ ]},
+ {t:"Materials & Finishes",items:[
+  "Wall finishes specified where required (bathrooms, service areas)",
+  "Flooring requirements noted (non-absorbent where required)"
+ ]},
+ {t:"Energy Compliance",items:[
+  "COMcheck provided (if required)",
+  "Lighting controls shown (occupancy sensors, etc.)"
+ ]},
+ {t:"Detail Check",items:[
+  "Wall sections provided",
+  "Connection details shown",
+  "MEP details sufficient for review (not conceptual only)"
+ ]},
+ {t:"Coordination Check",items:[
+  "Life safety plan matches floor plan",
+  "Door swings consistent with egress"
+ ]}
+];
+
+const ZONING = [
+ {t:"Permit Info", items:[
+  "Site address complete and correct",
+  "Parcel ID / map number verified",
+  "Zoning district identified",
+  "Municipality verified"
+ ]},
+ {t:"Owner & Applicant", items:[
+  "Owner name and address on application",
+  "Owner verified against parcel / deed",
+  "Applicant / agent information present",
+  "Contact information complete"
+ ]},
+ {t:"Site Conditions", items:[
+  "Plot plan included or noted as not required",
+  "Floodplain status identified (yes/no)",
+  "FIRM map number if in floodway",
+  "Floodway elevation noted if applicable",
+  "Stormwater management (SWM) trigger evaluated",
+  "SWM details included if required"
+ ]},
+ {t:"Lot & Building Dimensions", items:[
+  "Total lot area shown (acres or sq ft)",
+  "Proposed building height shown",
+  "Proposed building length shown",
+  "Proposed building width shown",
+  "Total square footage shown"
+ ]},
+ {t:"Setbacks & Coverage", items:[
+  "Front setback dimension shown",
+  "Side setback dimension shown",
+  "Rear setback dimension shown",
+  "Total lot coverage calculated (impervious surfaces)",
+  "Setbacks compared against zoning requirements"
+ ]},
+ {t:"Attachments", items:[
+  "Aerial map included",
+  "Parcel map included",
+  "Site plan included"
+ ]},
+ {t:"Township Review & Verification", items:[
+  "Zoning permit number assigned and recorded",
+  "Date of review recorded",
+  "Proposed use / improvement described",
+  "Allowed use confirmed (yes/no/variance/exception)",
+  "Non-conforming site status addressed",
+  "Non-conforming structure status addressed",
+  "Zoning case numbers noted if applicable",
+  "Stipulations from ZHB or BOS attached if required",
+  "Any other required documents present"
+ ]},
+ {t:"Certification", items:[
+  "Certification statement included",
+  "Compliance with zoning ordinance addressed",
+  "Permit approval / denial status indicated"
+ ]}
+];
+
+const MODES = {
+  res: {data: RESIDENTIAL, key:"drawscope-res-v1", tag:"Residential Drawing Review · Posch Ventures", label:"DRAWSCOPE · RESIDENTIAL · CHECK TWICE, BUILD ONCE"},
+  com: {data: COMMERCIAL, key:"drawscope-com-v1", tag:"Commercial Drawing Review · Posch Ventures", label:"DRAWSCOPE · COMMERCIAL · CHECK TWICE, BUILD ONCE"},
+  zon: {data: ZONING, key:"drawscope-zon-v1", tag:"Zoning Permit Review · Posch Ventures", label:"DRAWSCOPE · ZONING · CHECK TWICE, BUILD ONCE"}
+};
+
+let mode = localStorage.getItem("drawscope-mode") || "res";
+let state = {checks:{},fields:{}};
+
+function loadState(){
+  try{const s=localStorage.getItem(MODES[mode].key);state=s?JSON.parse(s):{checks:{},fields:{}}}
+  catch(e){state={checks:{},fields:{}}}
+}
+function save(){try{localStorage.setItem(MODES[mode].key,JSON.stringify(state))}catch(e){}}
+
+const root=document.getElementById("sections");
+const zroot=document.getElementById("zoning-form");
+
+function renderSections(){
+  root.innerHTML="";
+  const data=mode==="zon"?ZONING:(MODES[mode].data);
+  
+  // Add jump links for residential mode
+  if(mode==="res"){
+    const jumpContainer=document.createElement("div");
+    jumpContainer.style.cssText="padding:12px 14px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.05);margin-bottom:14px;font-size:12px";
+    jumpContainer.innerHTML='<span style="color:#a8c3de;letter-spacing:.08em;text-transform:uppercase">Quick Jump:</span> <a href="#deck-section" style="color:var(--accent);text-decoration:underline;margin-left:10px;cursor:pointer">Deck / Porch →</a>';
+    root.appendChild(jumpContainer);
+  }
+  
+  data.forEach((sec,si)=>{
+    const d=document.createElement("details");d.open=true;
+    // Add ID to deck section for jump link
+    if(mode==="res" && sec.t==="Deck")d.id="deck-section";
+    d.innerHTML=`<summary>${sec.t}<span class="count" id="c-${si}"></span></summary><ul>`+
+      sec.items.map((it,i)=>{
+        const id=si+"-"+i,ck=state.checks[id]?"checked":"";
+        return `<li class="${ck?'checked':''}"><label><input type="checkbox" data-id="${id}" ${ck}>${it}</label></li>`;
+      }).join("")+"</ul>";
+    root.appendChild(d);
+  });
+}
+
+function refresh(){
+  const data=mode==="zon"?ZONING:(MODES[mode].data);
+  data.forEach((sec,si)=>{
+    let sd=0;
+    sec.items.forEach((_,i)=>{if(state.checks[si+"-"+i]){sd++;}});
+    const c=document.getElementById("c-"+si);
+    c.textContent=sd+" / "+sec.items.length;
+    c.classList.toggle("done",sd===sec.items.length);
+  });
+}
+
+root.addEventListener("change",e=>{
+  if(e.target.matches("input[type=checkbox]")){
+    const id=e.target.dataset.id;
+    state.checks[id]=e.target.checked;
+    e.target.closest("li").classList.toggle("checked",e.target.checked);
+    save();refresh();
+  }
+});
+
+["project","owner","reviewer","date"].forEach(f=>{
+  const el=document.getElementById("f-"+f);
+  el.addEventListener("input",()=>{state.fields[f]=el.value;save();});
+});
+
+function loadFields(){
+  ["project","owner","reviewer","date"].forEach(f=>{
+    document.getElementById("f-"+f).value=state.fields[f]||"";
+  });
+}
+
+function render(){
+  zroot.style.display="none";
+  root.style.display="block";
+  renderSections();
+}
+
+function setMode(m){
+  mode=m;
+  localStorage.setItem("drawscope-mode",m);
+  document.getElementById("mode-res").classList.toggle("active",m==="res");
+  document.getElementById("mode-com").classList.toggle("active",m==="com");
+  document.getElementById("mode-zon").classList.toggle("active",m==="zon");
+  document.getElementById("tagline").textContent=MODES[m].tag;
+  document.getElementById("foot-label").textContent=MODES[m].label;
+  loadState();
+  loadFields();
+  render();
+  refresh();
+}
+
+function buildText(){
+  const data=mode==="zon"?ZONING:(MODES[mode].data);
+  const modeLabel=mode==="res"?"RESIDENTIAL":mode==="com"?"COMMERCIAL":"ZONING";
+  let out="DRAWSCOPE — "+modeLabel+" REVIEW\n";
+  out+="Project: "+(state.fields.project||"")+"\nReviewed by: "+(state.fields.reviewer||"")+"\nDate/Rev: "+(state.fields.date||"")+"\n\n";
+  if(mode!=="zon")out+="Owner: "+(state.fields.owner||"")+"\n\n";
+  data.forEach((sec,si)=>{
+    out+="== "+sec.t+" ==\n";
+    sec.items.forEach((it,i)=>{out+=(state.checks[si+"-"+i]?"[x] ":"[ ] ")+it+"\n";});
+    out+="\n";
+  });
+  return out;
+}
+async function shareList(){
+  const text=buildText();
+  if(navigator.share){try{await navigator.share({title:"DrawScope Review",text});return}catch(e){}}
+  try{await navigator.clipboard.writeText(text);alert("Checklist copied to clipboard.")}catch(e){alert("Sharing not available in this browser.")}
+}
+function resetAll(){
+  if(!confirm("Clear all checks and fields for this checklist?"))return;
+  state={checks:{},fields:{}};save();
+  loadFields();
+  render();
+  refresh();
+}
+
+setMode(mode);
+
+// keep all sections open when printing
+window.addEventListener("beforeprint",()=>document.querySelectorAll("details").forEach(d=>d.open=true));
+</script>
+</body>
+</html>
