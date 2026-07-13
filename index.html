@@ -223,7 +223,8 @@ const RESIDENTIAL = [
   "Roof framing details",
   "Roof slope",
   "Attachment to existing structure"
- ]}
+ ]},
+ {t:"Remarks", remarks:true}
 ];
 
 const COMMERCIAL = [
@@ -297,7 +298,8 @@ const COMMERCIAL = [
  {t:"Coordination Check",items:[
   "Life safety plan matches floor plan",
   "Door swings consistent with egress"
- ]}
+ ]},
+ {t:"Remarks", remarks:true}
 ];
 
 const ZONING = [
@@ -360,11 +362,13 @@ const ZONING = [
   "Stipulations from ZHB or BOS attached if required",
   "Any other required documents present"
  ]},
+ {t:"Remarks", remarks:true},
  {t:"Certification", items:[
   "Certification statement included",
   "Compliance with zoning ordinance addressed",
   "Permit approval / denial status indicated"
- ]}
+ ]},
+ {t:"Remarks", remarks:true}
 ];
 
 const MODES = {
@@ -398,6 +402,38 @@ function renderSections(){
   }
   
   data.forEach((sec,si)=>{
+    // Handle remarks section specially
+    if(sec.remarks){
+      const d=document.createElement("details");d.open=true;
+      const savedContent=state.fields.remarks_text||"";
+      d.innerHTML=`<summary>${sec.t}<span class="count" id="c-${si}"></span></summary>
+        <div style="padding:12px 14px;border-top:1px solid rgba(61,107,158,.45)">
+          <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;flex-wrap:wrap">
+            <button type="button" onclick="document.execCommand('bold')" title="Bold (Ctrl+B)" style="padding:4px 9px;background:var(--blueprint-deep);border:1px solid var(--line);color:#fff;cursor:pointer;font-weight:700;font-size:13px">B</button>
+            <button type="button" onclick="document.execCommand('italic')" title="Italic (Ctrl+I)" style="padding:4px 9px;background:var(--blueprint-deep);border:1px solid var(--line);color:#fff;cursor:pointer;font-style:italic;font-size:13px">I</button>
+            <div style="width:1px;height:20px;background:var(--line);margin:0 2px"></div>
+            <button type="button" onclick="setFontSize('small')" title="Small text" style="padding:4px 8px;background:var(--blueprint-deep);border:1px solid var(--line);color:#fff;cursor:pointer;font-size:10px">A</button>
+            <button type="button" onclick="setFontSize('normal')" title="Normal text" style="padding:4px 8px;background:var(--blueprint-deep);border:1px solid var(--line);color:#fff;cursor:pointer;font-size:13px">A</button>
+            <button type="button" onclick="setFontSize('large')" title="Large text" style="padding:4px 8px;background:var(--blueprint-deep);border:1px solid var(--line);color:#fff;cursor:pointer;font-size:17px">A</button>
+          </div>
+          <div id="remarks-field" contenteditable="true" style="min-height:100px;background:rgba(0,0,0,.2);border:1px solid var(--line);color:#fff;font-family:var(--mono);font-size:13px;padding:10px;outline:none;white-space:pre-wrap;word-wrap:break-word" placeholder="Notes on pending items, N/A conditions, or follow-up needed...">${savedContent}</div>
+        </div>`;
+      root.appendChild(d);
+
+      setTimeout(()=>{
+        const field=document.getElementById("remarks-field");
+        if(field){
+          field.addEventListener("input",()=>{
+            state.fields.remarks_text=field.innerHTML;
+            save();
+          });
+          // Show placeholder behavior
+          field.addEventListener("focus",()=>{if(field.innerHTML==="")field.style.opacity="1";});
+        }
+      },0);
+      return;
+    }
+    
     const d=document.createElement("details");d.open=true;
     // Add ID to deck section for jump link
     if(mode==="res" && sec.t==="Deck")d.id="deck-section";
@@ -413,6 +449,7 @@ function renderSections(){
 function refresh(){
   const data=mode==="zon"?ZONING:(MODES[mode].data);
   data.forEach((sec,si)=>{
+    if(sec.remarks || !sec.items)return; // skip remarks and any sections without items
     let sd=0;
     sec.items.forEach((_,i)=>{if(state.checks[si+"-"+i]){sd++;}});
     const c=document.getElementById("c-"+si);
@@ -461,6 +498,18 @@ function setMode(m){
   refresh();
 }
 
+function setFontSize(size){
+  const sizes={small:"11px",normal:"14px",large:"18px"};
+  document.execCommand("fontSize",false,"7"); // placeholder
+  const fontEls=document.querySelectorAll("#remarks-field font[size='7']");
+  fontEls.forEach(el=>{
+    el.removeAttribute("size");
+    el.style.fontSize=sizes[size];
+  });
+  const field=document.getElementById("remarks-field");
+  if(field){state.fields.remarks_text=field.innerHTML;save();}
+}
+
 function buildText(){
   const data=mode==="zon"?ZONING:(MODES[mode].data);
   const modeLabel=mode==="res"?"RESIDENTIAL":mode==="com"?"COMMERCIAL":"ZONING";
@@ -468,6 +517,10 @@ function buildText(){
   out+="Project: "+(state.fields.project||"")+"\nReviewed by: "+(state.fields.reviewer||"")+"\nDate/Rev: "+(state.fields.date||"")+"\n\n";
   if(mode!=="zon")out+="Owner: "+(state.fields.owner||"")+"\n\n";
   data.forEach((sec,si)=>{
+    if(sec.remarks){
+      out+="== "+sec.t+" ==\n"+(state.fields.remarks_text||"")+"\n\n";
+      return;
+    }
     out+="== "+sec.t+" ==\n";
     sec.items.forEach((it,i)=>{out+=(state.checks[si+"-"+i]?"[x] ":"[ ] ")+it+"\n";});
     out+="\n";
@@ -490,7 +543,9 @@ function resetAll(){
 setMode(mode);
 
 // keep all sections open when printing
-window.addEventListener("beforeprint",()=>document.querySelectorAll("details").forEach(d=>d.open=true));
+window.addEventListener("beforeprint",()=>{
+  document.querySelectorAll("details").forEach(d=>d.open=true);
+});
 </script>
 </body>
 </html>
