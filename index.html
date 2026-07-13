@@ -314,12 +314,20 @@ const ZONING = [
   "Contact information complete"
  ]},
  {t:"Site Conditions", items:[
-  "Plot plan included or noted as not required",
   "Floodplain status identified (yes/no)",
   "FIRM map number if in floodway",
   "Floodway elevation noted if applicable",
   "Stormwater management (SWM) trigger evaluated",
   "SWM details included if required"
+ ]},
+ {t:"Existing Structures & Impervious Surfaces", items:[
+  "Existing house / primary structure shown",
+  "Existing garage shown (if applicable)",
+  "Existing shed or accessory structures shown",
+  "Existing deck or patio shown (if applicable)",
+  "Sidewalk / walkway surfaces shown",
+  "Existing pool shown (if applicable)",
+  "All impervious surfaces accounted for in coverage calculation"
  ]},
  {t:"Lot & Building Dimensions", items:[
   "Total lot area shown (acres or sq ft)",
@@ -330,7 +338,7 @@ const ZONING = [
  ]},
  {t:"Setbacks & Coverage", items:[
   "Front setback dimension shown",
-  "Side setback dimension shown",
+  "Side setbacks dimension shown",
   "Rear setback dimension shown",
   "Total lot coverage calculated (impervious surfaces)",
   "Setbacks compared against zoning requirements"
@@ -340,11 +348,12 @@ const ZONING = [
   "Parcel map included",
   "Site plan included"
  ]},
- {t:"Township Review & Verification", items:[
+ {t:"Municipality Review & Verification", items:[
   "Zoning permit number assigned and recorded",
   "Date of review recorded",
   "Proposed use / improvement described",
   "Allowed use confirmed (yes/no/variance/exception)",
+  "Plot plan included or noted as not required",
   "Non-conforming site status addressed",
   "Non-conforming structure status addressed",
   "Zoning case numbers noted if applicable",
@@ -379,8 +388,19 @@ const zroot=document.getElementById("zoning-form");
 function renderSections(){
   root.innerHTML="";
   const data=mode==="zon"?ZONING:(MODES[mode].data);
+  
+  // Add jump links for residential mode
+  if(mode==="res"){
+    const jumpContainer=document.createElement("div");
+    jumpContainer.style.cssText="padding:12px 14px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.05);margin-bottom:14px;font-size:12px";
+    jumpContainer.innerHTML='<span style="color:#a8c3de;letter-spacing:.08em;text-transform:uppercase">Quick Jump:</span> <a href="#deck-section" style="color:var(--accent);text-decoration:underline;margin-left:10px;cursor:pointer">Deck / Porch →</a>';
+    root.appendChild(jumpContainer);
+  }
+  
   data.forEach((sec,si)=>{
     const d=document.createElement("details");d.open=true;
+    // Add ID to deck section for jump link
+    if(mode==="res" && sec.t==="Deck")d.id="deck-section";
     d.innerHTML=`<summary>${sec.t}<span class="count" id="c-${si}"></span></summary><ul>`+
       sec.items.map((it,i)=>{
         const id=si+"-"+i,ck=state.checks[id]?"checked":"";
